@@ -5,6 +5,7 @@
  */
 package facedetect;
 
+import java.io.File;
 import java.net.URL;
 import java.util.ResourceBundle;
 import java.util.concurrent.Executors;
@@ -17,13 +18,17 @@ import javafx.fxml.Initializable;
 import javafx.scene.control.Button;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
+import javafx.stage.DirectoryChooser;
 
 import org.opencv.core.Mat;
 import org.opencv.core.MatOfRect;
 import org.opencv.core.Point;
 import org.opencv.core.Rect;
 import org.opencv.core.Scalar;
+import org.opencv.core.Size;
+import org.opencv.imgcodecs.Imgcodecs;
 import org.opencv.imgproc.Imgproc;
+import org.opencv.objdetect.Objdetect;
 import org.opencv.videoio.VideoCapture;
 import org.opencv.objdetect.CascadeClassifier;
 
@@ -37,6 +42,8 @@ public class FXMLDocumentController implements Initializable {
     private Button button;
     @FXML
     private ImageView currentFrame;
+    @FXML
+    private DirectoryChooser directoryChooser;
     
     // a timer for acquiring the video stream
     private ScheduledExecutorService timer;
@@ -47,11 +54,16 @@ public class FXMLDocumentController implements Initializable {
     // the id of the camera to be used
     private static int cameraId = 0;
 
+    private static int imgNr = 1;
+    private static boolean saveImg = false;
+    private static String saveDir;
    
-    private Object classifier;
+    private CascadeClassifier faceCascade = new CascadeClassifier();
 
     @FXML
     private void handleButtonAction(ActionEvent event) {
+        if (!this.faceCascade.load("src\\facedetect\\haarcascade_frontalface_default.xml"))
+            System.out.println("Nie udalo sie zaladowac klasyfikatora");
    
         if (!this.cameraActive)
         {
@@ -101,6 +113,23 @@ public class FXMLDocumentController implements Initializable {
         }
     }
 
+    @FXML
+    private void handleSaveAction(ActionEvent event) {
+        saveImg = true;
+    }
+
+    @FXML
+    private void handleFolderAction(ActionEvent event) {
+        directoryChooser = new DirectoryChooser();
+        directoryChooser.setTitle("Wybierz folder");
+        File selectedDir = directoryChooser.showDialog(null);
+        if (selectedDir != null) {
+            saveDir = selectedDir.getAbsolutePath();
+            imgNr = 1;
+        }
+    }
+
+
     /**
      * Get a frame from the opened video stream (if any)
      *
@@ -110,6 +139,8 @@ public class FXMLDocumentController implements Initializable {
     {
             // init everything
             Mat frame = new Mat();
+            Mat grayFrame = new Mat();
+            MatOfRect faces = new MatOfRect();
 
             // check if the capture is open
             if (this.capture.isOpened())
@@ -118,30 +149,28 @@ public class FXMLDocumentController implements Initializable {
                     {
                             // read the current frame
                             this.capture.read(frame);
-                             String file = "C:\\opencv\\build\\etc\\haarcascades\\haarcascade_frontalface_alt.xml";
-                                CascadeClassifier classifier = new CascadeClassifier(file);
+
                             // if the frame is not empty, process it
-                               MatOfRect faceDetections = new MatOfRect();
-                                classifier.detectMultiScale(frame, faceDetections);
-                                System.out.println(String.format("Detected %s faces",
-                                faceDetections.toArray().length));
-                                
-                                // Drawing boxes
-         for (Rect rect : faceDetections.toArray()) {
-            Imgproc.rectangle(
-               frame,                                   //where to draw the box
-               new Point(rect.x, rect.y),                            //bottom left
-               new Point(rect.x + rect.width, rect.y + rect.height), //top right
-               new Scalar(0, 0, 255)                                 //RGB colour
-            );
-         }
-                                
                             if (!frame.empty())
                             {
-                                    Imgproc.cvtColor(frame, frame, Imgproc.COLOR_BGR2GRAY);
+                                    Imgproc.cvtColor(frame, grayFrame, Imgproc.COLOR_BGR2GRAY);
+                                    //Imgproc.equalizeHist(grayFrame, grayFrame);
+                                    // detect faces
+                                    this.faceCascade.detectMultiScale(grayFrame, faces, 1.1, 2, 0 | Objdetect.CASCADE_SCALE_IMAGE, new Size(50, 50), new Size());
+                                    // each rectangle in faces is a face: draw them!
+                                    Rect[] facesArray = faces.toArray();
+                                    for (int i = 0; i < facesArray.length; i++)
+                                        Imgproc.rectangle(frame, facesArray[i].tl(), facesArray[i].br(), new Scalar(0, 255, 0), 3);
                                     
-                            }
+                                    if ( saveImg ) {
+                                        Mat face = grayFrame.submat(facesArray[0]);
+                                        Imgcodecs img = new Imgcodecs();
+                                        img.imwrite(saveDir+"\\"+imgNr+".pgm", face);
+                                        imgNr++;
+                                        saveImg = false;
+                                    }
                             
+                            }
 
                     }
                     catch (Exception e)

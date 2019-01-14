@@ -6,7 +6,10 @@
 package facedetect;
 
 import java.io.File;
+import java.io.FilenameFilter;
 import java.net.URL;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.ResourceBundle;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -183,9 +186,7 @@ public class FXMLDocumentController implements Initializable {
             return frame;
     }
 
-    /**
-     * Stop the acquisition from the camera and release all the resources
-     */
+  
     private void stopAcquisition()
     {
             if (this.timer!=null && !this.timer.isShutdown())

@@ -5,12 +5,17 @@
  */
 package facedetect;
 
+import com.opencsv.CSVReader;
 import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
 import java.io.FilenameFilter;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.ResourceBundle;
+import java.util.Scanner;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -34,13 +39,16 @@ import org.opencv.imgproc.Imgproc;
 import org.opencv.objdetect.Objdetect;
 import org.opencv.videoio.VideoCapture;
 import org.opencv.objdetect.CascadeClassifier;
-
+import org.opencv.face.BasicFaceRecognizer;
+import org.opencv.face.Face;
+import org.opencv.face.FaceRecognizer;
+import org.opencv.face.Facemark;
 /**
  *
  * @author rfrysiak
  */
 public class FXMLDocumentController implements Initializable {
-    
+       
     @FXML
     private Button button;
     @FXML
@@ -64,6 +72,12 @@ public class FXMLDocumentController implements Initializable {
     private CascadeClassifier faceCascade = new CascadeClassifier();
 
     @FXML
+    private void handlebazaAction(ActionEvent event) {
+   
+                    loadDB();
+                  
+                }
+    @FXML
     private void handleButtonAction(ActionEvent event) {
         if (!this.faceCascade.load("src\\facedetect\\haarcascade_frontalface_default.xml"))
             System.out.println("Nie udalo sie zaladowac klasyfikatora");
@@ -84,6 +98,7 @@ public class FXMLDocumentController implements Initializable {
                                 @Override
                                 public void run()
                                 {
+                                    
                                         // effectively grab and process a single frame
                                         Mat frame = grabFrame();
                                         // convert and show the frame
@@ -144,7 +159,8 @@ public class FXMLDocumentController implements Initializable {
             Mat frame = new Mat();
             Mat grayFrame = new Mat();
             MatOfRect faces = new MatOfRect();
-
+                
+                
             // check if the capture is open
             if (this.capture.isOpened())
             {
@@ -185,7 +201,62 @@ public class FXMLDocumentController implements Initializable {
 
             return frame;
     }
+private void loadDB () {
+  
+        File baza = new File("src\\\\facedetect\\\\face.csv");
+       
+        try{
+            // inicjacja skanera
+            Scanner inputStream = new Scanner(baza);
+            String [] doRozdzialu= new String[100];
+            ArrayList<Mat> images = new ArrayList<>();
+            ArrayList<Mat> labels = new ArrayList<>();
+           
+            String data;
+            
+            // jesli nastepna linia = true
+            
+            while(inputStream.hasNext()){
+                //czytaj linie
+                
+                 data= inputStream.nextLine();
+               // System.out.println("#### czytam linie" + data);
+                ArrayList aList= new ArrayList(Arrays.asList(data.split(" ; ")));
+             
+                
+                for(int j=0;j<aList.size();j++)
+                    {
+                        if(j==0)
+                        {
+                           
+                          // tutaj wkładam do obrazy
+                        }
+                        else
+                        { 
+                            
+                            // tutaj wkładam do indexy
+                        }
+                        System.out.println("iterator "+j+" "+aList.get(j));
+                    }
+                
+                
+            }
+            
+               
+            System.out.println("pliki dodane");
+           /* 
+            for(int y=0;y>=images.size();y++){
+                System.out.println("index "+y+" = "+images.get(y));
+            }
+            */
+            inputStream.close();
 
+
+        }catch (FileNotFoundException e){
+
+            System.out.println("błąd z bazą");
+        }
+                }
   
     private void stopAcquisition()
     {

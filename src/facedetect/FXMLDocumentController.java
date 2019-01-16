@@ -236,7 +236,7 @@ private void loadDB () {
                             
                             // tutaj wkładam do indexy
                         }
-                        System.out.println("iterator "+j+" "+aList.get(j));
+                        System.out.println("iterator "+j+" -> "+aList.get(j));
                     }
                 
                 

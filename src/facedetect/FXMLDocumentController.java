@@ -23,7 +23,7 @@ import javafx.scene.control.Button;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.stage.DirectoryChooser;
-import static org.opencv.core.CvType.CV_32SC1;
+import static org.opencv.core.Core.FONT_HERSHEY_PLAIN;
 
 import org.opencv.core.Mat;
 import org.opencv.core.MatOfInt;
@@ -37,8 +37,10 @@ import org.opencv.objdetect.Objdetect;
 import org.opencv.videoio.VideoCapture;
 import org.opencv.objdetect.CascadeClassifier;
 import org.opencv.face.BasicFaceRecognizer;
+import org.opencv.face.EigenFaceRecognizer;
 import org.opencv.face.FaceRecognizer;
 import org.opencv.face.FisherFaceRecognizer;
+import org.opencv.face.LBPHFaceRecognizer;
 /**
  *
  * @author rfrysiak
@@ -163,39 +165,50 @@ public class FXMLDocumentController implements Initializable {
             // check if the capture is open
             if (this.capture.isOpened())
             {
-                    try
-                    {
-                            // read the current frame
-                            this.capture.read(frame);
+                try
+                {
+                    // read the current frame
+                    this.capture.read(frame);
 
-                            // if the frame is not empty, process it
-                            if (!frame.empty())
-                            {
-                                    Imgproc.cvtColor(frame, grayFrame, Imgproc.COLOR_BGR2GRAY);
-                                    //Imgproc.equalizeHist(grayFrame, grayFrame);
-                                    // detect faces
-                                    this.faceCascade.detectMultiScale(grayFrame, faces, 1.1, 2, 0 | Objdetect.CASCADE_SCALE_IMAGE, new Size(50, 50), new Size());
-                                    // each rectangle in faces is a face: draw them!
-                                    Rect[] facesArray = faces.toArray();
-                                    for (int i = 0; i < facesArray.length; i++)
-                                        Imgproc.rectangle(frame, facesArray[i].tl(), facesArray[i].br(), new Scalar(0, 255, 0), 3);
-                                    
-                                    if ( saveImg ) {
-                                        Mat face = grayFrame.submat(facesArray[0]);
-                                        Imgcodecs img = new Imgcodecs();
-                                        img.imwrite(saveDir+"\\"+imgNr+".pgm", face);
-                                        imgNr++;
-                                        saveImg = false;
-                                    }
-                            
+                    // if the frame is not empty, process it
+                    if (!frame.empty())
+                    {
+                        Imgproc.cvtColor(frame, grayFrame, Imgproc.COLOR_BGR2GRAY);
+                        //Imgproc.equalizeHist(grayFrame, grayFrame);
+                        // detect faces
+                        this.faceCascade.detectMultiScale(grayFrame, faces, 1.1, 2, 0 | Objdetect.CASCADE_SCALE_IMAGE, new Size(50, 50), new Size());
+                        // each rectangle in faces is a face: draw them!
+                        Rect[] facesArray = faces.toArray();
+                        for (Rect face : facesArray) {
+                            int w = (int) (face.height*0.1);
+                            face.x -= w;
+                            face.y -= w;
+                            face.height += w*2;
+                            face.width += w*2;
+                            Imgproc.rectangle(frame, face.tl(), face.br(), new Scalar(0, 255, 0), 3);
+                            int z = (int) (face.height - (face.height*0.821));
+                            face.x += z/2;
+                            face.width -= z;
+                            Mat tmpImg = grayFrame.submat(face);
+                            Imgproc.resize(tmpImg, tmpImg, new Size(92, 112));
+                            int[] label = new int[1];
+                            double[] confidence = new double[1];
+                            model.predict(tmpImg, label, confidence);
+                            Imgproc.putText(frame, String.format("Face = %d/%.0f", label[0], confidence[0]), face.tl(), FONT_HERSHEY_PLAIN, 2.0, new Scalar(0, 0, 255), 2);
+                            if ( saveImg ) {
+                                Imgcodecs img = new Imgcodecs();
+                                img.imwrite(saveDir+"\\"+imgNr+".pgm", tmpImg);
+                                imgNr++;
+                                saveImg = false;
                             }
-
+                        }
                     }
-                    catch (Exception e)
-                    {
-                            // log the error
-                            System.err.println("Exception during the image elaboration: " + e);
-                    }
+                }
+                catch (Exception e)
+                {
+                        // log the error
+                        System.err.println("Exception during the image elaboration: " + e);
+                }
             }
 
             return frame;
@@ -245,7 +258,9 @@ public class FXMLDocumentController implements Initializable {
             
             MatOfInt labels = new MatOfInt();
             labels.fromList(inty);
-            model = FisherFaceRecognizer.create();
+//            model = FisherFaceRecognizer.create();
+//            model = EigenFaceRecognizer.create();
+            model = LBPHFaceRecognizer.create();
             model.train(images, labels);
            
             inputStream.close();

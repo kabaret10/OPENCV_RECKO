@@ -5,20 +5,13 @@
  */
 package facedetect;
 
-import com.opencsv.CSVReader;
-import static com.sun.org.apache.xalan.internal.xsltc.compiler.util.Type.Int;
 import java.io.File;
 import java.io.FileNotFoundException;
-import java.io.FileReader;
-import java.io.FilenameFilter;
 import java.net.URL;
-import java.nio.IntBuffer;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.List;
 import java.util.ResourceBundle;
 import java.util.Scanner;
-import java.util.Vector;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -35,7 +28,6 @@ import static org.opencv.core.CvType.CV_32SC1;
 import org.opencv.core.Mat;
 import org.opencv.core.MatOfInt;
 import org.opencv.core.MatOfRect;
-import org.opencv.core.Point;
 import org.opencv.core.Rect;
 import org.opencv.core.Scalar;
 import org.opencv.core.Size;
@@ -45,9 +37,7 @@ import org.opencv.objdetect.Objdetect;
 import org.opencv.videoio.VideoCapture;
 import org.opencv.objdetect.CascadeClassifier;
 import org.opencv.face.BasicFaceRecognizer;
-import org.opencv.face.Face;
 import org.opencv.face.FaceRecognizer;
-import org.opencv.face.Facemark;
 import org.opencv.face.FisherFaceRecognizer;
 /**
  *
@@ -76,17 +66,20 @@ public class FXMLDocumentController implements Initializable {
     private static String saveDir;
    
     private CascadeClassifier faceCascade = new CascadeClassifier();
-
+    private FaceRecognizer model;
+    
     @FXML
     private void handlebazaAction(ActionEvent event) {
    
-                    loadDB();
+                    //loadDB();
                   
                 }
     @FXML
     private void handleButtonAction(ActionEvent event) {
         if (!this.faceCascade.load("src\\facedetect\\haarcascade_frontalface_default.xml"))
             System.out.println("Nie udalo sie zaladowac klasyfikatora");
+        
+        trainModel();
    
         if (!this.cameraActive)
         {
@@ -207,7 +200,8 @@ public class FXMLDocumentController implements Initializable {
 
             return frame;
     }
-private void loadDB () {
+
+    private void trainModel() {
   
         File baza = new File("src\\\\facedetect\\\\face.csv");
        
@@ -216,9 +210,6 @@ private void loadDB () {
             Scanner inputStream = new Scanner(baza);
              ArrayList<Mat> images = new ArrayList<Mat>();
              ArrayList<Integer>  inty=new ArrayList<Integer>();
-             MatOfInt labels = new MatOfInt();
-            //FaceRecognizer model = FisherFaceRecognizer.create();
-           
             
             String data;
 
@@ -241,10 +232,7 @@ private void loadDB () {
                             { 
                                 String load1=(String) aList.get(j); 
                                 
-                                 // todo
-                                
-                                
-                                
+                                inty.add(Integer.parseInt(load1));                                
                                 // tutaj wkładam do indexy
                             }
                             
@@ -255,17 +243,18 @@ private void loadDB () {
                
             System.out.println("pliki dodane");
             
-       //   model.train(images, labels);
-          
+            MatOfInt labels = new MatOfInt();
+            labels.fromList(inty);
+            model = FisherFaceRecognizer.create();
+            model.train(images, labels);
            
             inputStream.close();
-
 
         }catch (FileNotFoundException e){
 
             System.out.println("błąd z bazą");
         }
-                }
+    }
   
     private void stopAcquisition()
     {

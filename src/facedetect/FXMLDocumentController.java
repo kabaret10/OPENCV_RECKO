@@ -6,16 +6,19 @@
 package facedetect;
 
 import com.opencsv.CSVReader;
+import static com.sun.org.apache.xalan.internal.xsltc.compiler.util.Type.Int;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.FilenameFilter;
 import java.net.URL;
+import java.nio.IntBuffer;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.ResourceBundle;
 import java.util.Scanner;
+import java.util.Vector;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -27,8 +30,10 @@ import javafx.scene.control.Button;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.stage.DirectoryChooser;
+import static org.opencv.core.CvType.CV_32SC1;
 
 import org.opencv.core.Mat;
+import org.opencv.core.MatOfInt;
 import org.opencv.core.MatOfRect;
 import org.opencv.core.Point;
 import org.opencv.core.Rect;
@@ -43,6 +48,7 @@ import org.opencv.face.BasicFaceRecognizer;
 import org.opencv.face.Face;
 import org.opencv.face.FaceRecognizer;
 import org.opencv.face.Facemark;
+import org.opencv.face.FisherFaceRecognizer;
 /**
  *
  * @author rfrysiak
@@ -208,47 +214,50 @@ private void loadDB () {
         try{
             // inicjacja skanera
             Scanner inputStream = new Scanner(baza);
-            String [] doRozdzialu= new String[100];
-            ArrayList<Mat> images = new ArrayList<>();
-            ArrayList<Mat> labels = new ArrayList<>();
+             ArrayList<Mat> images = new ArrayList<Mat>();
+             ArrayList<Integer>  inty=new ArrayList<Integer>();
+             MatOfInt labels = new MatOfInt();
+            //FaceRecognizer model = FisherFaceRecognizer.create();
            
+            
             String data;
-            
-            // jesli nastepna linia = true
-            
-            while(inputStream.hasNext()){
-                //czytaj linie
-                
-                 data= inputStream.nextLine();
-               // System.out.println("#### czytam linie" + data);
+
+            while(inputStream.hasNext())
+            {
+                               
+                data= inputStream.nextLine();           
                 ArrayList aList= new ArrayList(Arrays.asList(data.split(" ; ")));
-             
+               
                 
-                for(int j=0;j<aList.size();j++)
-                    {
-                        if(j==0)
+                    for(int j=0;j<aList.size();j++)
                         {
-                           
-                          // tutaj wkładam do obrazy
-                        }
-                        else
-                        { 
+                            if(j==0)
+                            {
+                                String load0=(String) aList.get(j);
+                                images.add(Imgcodecs.imread(load0, 0));
+                              // tutaj wkładam do obrazy
+                            }
+                            else
+                            { 
+                                String load1=(String) aList.get(j); 
+                                
+                                 // todo
+                                
+                                
+                                
+                                // tutaj wkładam do indexy
+                            }
                             
-                            // tutaj wkładam do indexy
-                        }
-                        System.out.println("iterator "+j+" -> "+aList.get(j));
-                    }
-                
-                
+                           // System.out.println("iterator "+j+" -> "+aList.get(j));
+                        } 
             }
             
                
             System.out.println("pliki dodane");
-           /* 
-            for(int y=0;y>=images.size();y++){
-                System.out.println("index "+y+" = "+images.get(y));
-            }
-            */
+            
+       //   model.train(images, labels);
+          
+           
             inputStream.close();
 
 

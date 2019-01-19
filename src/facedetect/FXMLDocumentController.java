@@ -109,7 +109,7 @@ public class FXMLDocumentController implements Initializable {
                         };
 
                         this.timer = Executors.newSingleThreadScheduledExecutor();
-                        this.timer.scheduleAtFixedRate(frameGrabber, 0, 33, TimeUnit.MILLISECONDS);
+                        this.timer.scheduleAtFixedRate(frameGrabber, 0, 18, TimeUnit.MILLISECONDS);
 
                         // update the button content
                         this.button.setText("Stop Camera");
@@ -174,7 +174,7 @@ public class FXMLDocumentController implements Initializable {
                     if (!frame.empty())
                     {
                         Imgproc.cvtColor(frame, grayFrame, Imgproc.COLOR_BGR2GRAY);
-                        //Imgproc.equalizeHist(grayFrame, grayFrame);
+                        Imgproc.equalizeHist(grayFrame, grayFrame);
                         // detect faces
                         this.faceCascade.detectMultiScale(grayFrame, faces, 1.1, 2, 0 | Objdetect.CASCADE_SCALE_IMAGE, new Size(50, 50), new Size());
                         // each rectangle in faces is a face: draw them!
@@ -194,7 +194,10 @@ public class FXMLDocumentController implements Initializable {
                             int[] label = new int[1];
                             double[] confidence = new double[1];
                             model.predict(tmpImg, label, confidence);
-                            Imgproc.putText(frame, String.format("Face = %d/%.0f", label[0], confidence[0]), face.tl(), FONT_HERSHEY_PLAIN, 2.0, new Scalar(0, 0, 255), 2);
+                           
+                            if(confidence[0]<100){
+                            Imgproc.putText(frame, String.format("Face = %d/%.0f", label[0]+1, confidence[0]), face.tl(), FONT_HERSHEY_PLAIN, 2.0, new Scalar(0, 0, 255), 2);
+                           }
                             if ( saveImg ) {
                                 Imgcodecs img = new Imgcodecs();
                                 img.imwrite(saveDir+"\\"+imgNr+".pgm", tmpImg);
@@ -258,8 +261,8 @@ public class FXMLDocumentController implements Initializable {
             
             MatOfInt labels = new MatOfInt();
             labels.fromList(inty);
-//            model = FisherFaceRecognizer.create();
-//            model = EigenFaceRecognizer.create();
+       //  model = FisherFaceRecognizer.create();
+    //   model = EigenFaceRecognizer.create();
             model = LBPHFaceRecognizer.create();
             model.train(images, labels);
            
